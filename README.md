@@ -32,6 +32,11 @@ npm run deploy
 npm run set:admin
 ```
 
+## Test
+```shell
+npm run test
+```
+
 ## Start service
 ### Local
 ```shell

@@ -35,8 +35,8 @@
     "coverage": "DEFAULT_NETWORK=hardhat npx hardhat coverage",
     "lint": "npm run lint:js && npm run lint:sol",
     "lint:fix": "npm run lint:js:fix && npm run lint:sol:fix",
-    "lint:js": "prettier --log-level warn 'priceFeedService/*.ts' 'scripts/*.ts' --check && eslint 'priceFeedService/*.ts' 'scripts/*.ts'",
-    "lint:js:fix": "prettier --log-level warn 'priceFeedService/*.ts' 'scripts/*.ts' --write && eslint 'priceFeedService/*.ts' 'scripts/*.ts' --fix",
+    "lint:js": "prettier --log-level warn 'priceFeedService/*.ts' 'scripts/*.ts' 'test/*.ts' --check && eslint 'priceFeedService/*.ts' 'scripts/*.ts' 'test/*.ts'",
+    "lint:js:fix": "prettier --log-level warn 'priceFeedService/*.ts' 'scripts/*.ts' 'test/*.ts' --write && eslint 'priceFeedService/*.ts' 'scripts/*.ts' 'test/*.ts' --fix",
     "lint:sol": "prettier --log-level warn 'contracts/**/*.sol' --check && solhint 'contracts/**/*.sol'",
     "lint:sol:fix": "prettier --log-level warn 'contracts/**/*.sol' --write",
     "run:priceFeed": "npx hardhat run priceFeedService/priceFeed.service.ts"
