@@ -8,6 +8,7 @@ import {
   DEPLOY_PRICEFEED_LOG_PREFIX,
   DEPLOY_LOG_PRICEFEED_ADMINS,
   DEPLOY_LOG_PRICEFEED_PROXY,
+  DEPLOY_LOG_PRICEFEED_PROXY_VERIFIED,
   DEPLOY_LOG_PRICEFEED_TARGET,
   DEPLOY_LOG_PRICEFEED_TARGET_VERIFIED,
 } from './deploy_log_name';
@@ -78,19 +79,12 @@ task('deployPriceFeed', 'Deploy price feed')
       }
       console.log(`${token_symbol} price feed target: ${priceFeedTargetAddr}`);
 
-      // verify target contract
-      if (!(DEPLOY_LOG_PRICEFEED_TARGET_VERIFIED in dLog) && !skipVerify) {
-        await verifyContractCode(hardhat, priceFeedTargetAddr, []);
-        dLog[DEPLOY_LOG_PRICEFEED_TARGET_VERIFIED] = true;
+      // verify proxy contract
+      if (!(DEPLOY_LOG_PRICEFEED_PROXY_VERIFIED in dLog) && !skipVerify) {
+        await verifyContractCode(hardhat, priceFeedTargetAddr, [], getFeedContractName());
+        dLog[DEPLOY_LOG_PRICEFEED_PROXY_VERIFIED] = true;
         fs.writeFileSync(deployLogPath, JSON.stringify(dLog, null, 2));
       }
-
-      // verify proxy contract
-      // if (!(DEPLOY_LOG_PRICEFEED_PROXY_VERIFIED in dLog) && !skipVerify) {
-      //     await verifyContractCode(hardhat, priceFeedAddr, []);
-      //     dLog[DEPLOY_LOG_PRICEFEED_PROXY_VERIFIED] = true;
-      //     fs.writeFileSync(deployLogPath, JSON.stringify(dLog, null, 2));
-      // }
     }
   });
 
@@ -136,47 +130,56 @@ task('upgradePriceFeed', 'Upgrade price feed')
 
     // verify target contract
     if (!skipVerify) {
-      await verifyContractCode(hardhat, newContractTargetAddr, []);
+      await verifyContractCode(hardhat, newContractTargetAddr, [], getFeedContractName());
       dLog[DEPLOY_LOG_PRICEFEED_TARGET_VERIFIED] = true;
       fs.writeFileSync(deployLogPath, JSON.stringify(dLog, null, 2));
     }
   });
 
-task('setAdmin', 'Set admin').setAction(async (_, hardhat) => {
-  const priceFeedConfigs = await initPriceFeedConfig();
-  for (const [, config] of priceFeedConfigs) {
-    console.log('price feed config:', config);
-    const token_symbol = config.symbol;
-    const log_name = DEPLOY_PRICEFEED_LOG_PREFIX + '_' + token_symbol;
-    const { deployLogPath, deployLog } = createOrGetDeployLog(log_name, hardhat.network.name);
-    const dLog = deployLog as any;
-    const contractAddr = dLog[DEPLOY_LOG_PRICEFEED_PROXY];
-    if (contractAddr === undefined) {
-      console.log(`${token_symbol} price feed address not exist`);
-      return;
-    }
-    console.log(`${token_symbol} price feed address: ${contractAddr}`);
-    let admins = dLog[DEPLOY_LOG_PRICEFEED_ADMINS];
-    if (admins === undefined) {
-      admins = [];
-    }
+task('setAdmin', 'Set admin')
+  .addParam('override', 'Override', false, types.boolean, true)
+  .setAction(async (taskArgs, hardhat) => {
+    const isOverride = taskArgs.override;
+    console.log('override setting?', isOverride);
 
-    const priceFeedContract = await hardhat.ethers.getContractAt(getFeedContractName(), contractAddr);
-    const adminPK = config.adminPK;
-    if (adminPK === undefined) {
-      console.log(`${token_symbol} admin pk not exist`);
-      return;
-    }
-    const adminWallet = new hardhat.ethers.Wallet(adminPK, hardhat.ethers.provider);
-    const adminAddr = await adminWallet.getAddress();
-    console.log(`${token_symbol} admin address: ${adminAddr}`);
+    const priceFeedConfigs = await initPriceFeedConfig();
+    for (const [, config] of priceFeedConfigs) {
+      console.log('price feed config:', config);
+      const token_symbol = config.symbol;
+      const log_name = DEPLOY_PRICEFEED_LOG_PREFIX + '_' + token_symbol;
+      const { deployLogPath, deployLog } = createOrGetDeployLog(log_name, hardhat.network.name);
+      const dLog = deployLog as any;
+      const contractAddr = dLog[DEPLOY_LOG_PRICEFEED_PROXY];
+      if (contractAddr === undefined) {
+        console.log(`${token_symbol} price feed address not exist`);
+        return;
+      }
+      console.log(`${token_symbol} price feed address: ${contractAddr}`);
+      let admins = dLog[DEPLOY_LOG_PRICEFEED_ADMINS];
+      if (admins === undefined) {
+        admins = [];
+      }
 
-    const tx = await priceFeedContract.setAdmin(adminAddr, true);
-    console.log('set admin tx', tx.hash);
-    await tx.wait();
-    admins.push(adminAddr);
-    dLog[DEPLOY_LOG_PRICEFEED_ADMINS] = admins;
-    fs.writeFileSync(deployLogPath, JSON.stringify(dLog, null, 2));
-    console.log(`${token_symbol} price feed set admin success`);
-  }
-});
+      if (admins.length > 0 && !isOverride) {
+        continue;
+      }
+
+      const priceFeedContract = await hardhat.ethers.getContractAt(getFeedContractName(), contractAddr);
+      const adminPK = config.adminPK;
+      if (adminPK === undefined) {
+        console.log(`${token_symbol} admin pk not exist`);
+        return;
+      }
+      const adminWallet = new hardhat.ethers.Wallet(adminPK, hardhat.ethers.provider);
+      const adminAddr = await adminWallet.getAddress();
+      console.log(`${token_symbol} admin address: ${adminAddr}`);
+
+      const tx = await priceFeedContract.setAdmin(adminAddr, true);
+      console.log('set admin tx', tx.hash);
+      await tx.wait();
+      admins.push(adminAddr);
+      dLog[DEPLOY_LOG_PRICEFEED_ADMINS] = admins;
+      fs.writeFileSync(deployLogPath, JSON.stringify(dLog, null, 2));
+      console.log(`${token_symbol} price feed set admin success`);
+    }
+  });

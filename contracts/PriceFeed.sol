@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "./interfaces/IPriceFeed.sol";
+import {IPriceFeed} from "./interfaces/IPriceFeed.sol";
 
 contract PriceFeed is IPriceFeed, UUPSUpgradeable, OwnableUpgradeable {
     string private __description;

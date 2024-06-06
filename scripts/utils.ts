@@ -23,17 +23,22 @@ export async function verifyContractCode(
   hardhat: HardhatRuntimeEnvironment,
   address: string,
   constructorArguments: any[],
+  contractName: string,
 ) {
   // contract code may be not exist after tx send to chain
   // try every one minutes if verify failed
   console.log('verify %s code...', address);
+  const contrctArtifact = await hardhat.artifacts.readArtifact(contractName);
 
   /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
   while (true) {
     try {
       await hardhat.run('verify:verify', {
         address: address,
+        contract: `${contrctArtifact.sourceName}:${contractName}`,
         constructorArguments: constructorArguments,
+        bytecode: contrctArtifact.bytecode,
+        noCompile: true,
       });
       console.log('contract code verified success');
       return;
