@@ -19,6 +19,8 @@ contract PriceFeed is IPriceFeed, UUPSUpgradeable, OwnableUpgradeable {
     mapping(uint80 => int256) public answers;
     mapping(address => bool) public isAdmin;
 
+    event PriceUpdate(uint256 price, uint256 lastAnswerTime);
+
     /**
      * @dev This empty reserved space is put in place to allow future versions to add new
      * variables without shifting down storage in the inheritance chain.
@@ -78,6 +80,8 @@ contract PriceFeed is IPriceFeed, UUPSUpgradeable, OwnableUpgradeable {
         answer = _answer;
         answers[roundId] = _answer;
         lastSetAnswerTime = block.timestamp;
+
+        emit PriceUpdate(uint256(_answer), lastSetAnswerTime);
     }
 
     // returns roundId, answer, startedAt, updatedAt, answeredInRound
