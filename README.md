@@ -37,6 +37,11 @@ npm run set:admin
 npm run test
 ```
 
+## Upgrade
+```shell
+npx hardhat upgradePriceFeed --symbol "wETH"
+```
+
 ## Start service
 ### Local
 ```shell
